@@ -8,7 +8,7 @@ from .config import B
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS api(zeit REAL, endpunkt TEXT, begriff TEXT, credits INTEGER, cache TEXT, ms INTEGER, anzahl INTEGER, fehler TEXT);
 CREATE TABLE IF NOT EXISTS ollama(zeit REAL, modell TEXT, aufgabe TEXT, ms INTEGER, ms_laden INTEGER, tokens_ein INTEGER, tokens_aus INTEGER,
-  tokens_s REAL, versuche INTEGER, json_einfach INTEGER, fehler TEXT);
+  tokens_s REAL, versuche INTEGER, json_einfach INTEGER, fehler TEXT, zeichen INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS rezept(id INTEGER PRIMARY KEY, start REAL, ende REAL, quelle TEXT, zutaten INTEGER, schritte INTEGER, warnungen INTEGER,
   ms_extrahieren INTEGER, fehler TEXT, zutaten_gesucht INTEGER DEFAULT 0, ohne_api INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS zutat(zeit REAL, lauf INTEGER, zweck TEXT, zutat TEXT, stufe TEXT, begriff TEXT, kandidaten INTEGER, gewaehlt INTEGER, ms INTEGER);
@@ -27,6 +27,8 @@ def mdb():
         c.execute(f"UPDATE rezept SET zutaten_gesucht=(SELECT COUNT(*) FROM zutat WHERE lauf=rezept.id AND zweck='zutat'), "
                   f"ohne_api=(SELECT COUNT(*) FROM zutat WHERE lauf=rezept.id AND zweck='zutat' AND stufe IN ({','.join('?' * len(OHNE_API))}))", OHNE_API)
         c.commit()
+    if "zeichen" not in [r[1] for r in c.execute("PRAGMA table_info(ollama)")]:  # ältere Datei: Länge der Eingabe fehlt noch (alte Zeilen: 0 = unbekannt)
+        c.execute("ALTER TABLE ollama ADD COLUMN zeichen INTEGER DEFAULT 0"); c.commit()
     return c
 
 def _schreiben(sql, werte):
@@ -37,12 +39,13 @@ def _schreiben(sql, werte):
 def api(endpunkt, begriff, credits=0, cache="", ms=0, anzahl=0, fehler=""):
     _schreiben("INSERT INTO api VALUES(?,?,?,?,?,?,?,?)", (time.time(), endpunkt, begriff, credits, cache or "neu", ms, anzahl, fehler))
 
-def ollama(modell, aufgabe, ms, werte, versuche, json_einfach, fehler=""):
-    """werte: die Zahlen aus der letzten Ollama-Antwort (Zeiten in Nanosekunden)."""
+def ollama(modell, aufgabe, ms, werte, versuche, json_einfach, fehler="", zeichen=0):
+    """werte: die Zahlen aus der letzten Ollama-Antwort (Zeiten in Nanosekunden). zeichen: Länge der Eingabe (nur die Zahl, kein Text)."""
     ns = lambda k: int((werte.get(k) or 0) / 1e6)
     aus, dauer = werte.get("eval_count") or 0, werte.get("eval_duration") or 0
-    _schreiben("INSERT INTO ollama VALUES(?,?,?,?,?,?,?,?,?,?,?)", (time.time(), modell, aufgabe, ms, ns("load_duration"), werte.get("prompt_eval_count") or 0, aus,
-               round(aus / (dauer / 1e9), 1) if dauer else 0, versuche, int(json_einfach), fehler))
+    _schreiben("INSERT INTO ollama(zeit,modell,aufgabe,ms,ms_laden,tokens_ein,tokens_aus,tokens_s,versuche,json_einfach,fehler,zeichen) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
+               (time.time(), modell, aufgabe, ms, ns("load_duration"), werte.get("prompt_eval_count") or 0, aus,
+                round(aus / (dauer / 1e9), 1) if dauer else 0, versuche, int(json_einfach), fehler, zeichen))
 
 def rezept_start(quelle, zutaten, schritte, warnungen, ms, fehler=""):
     now = time.time()
@@ -80,19 +83,45 @@ def _median(werte):
     w = sorted(x for x in werte if x and x > 0)
     return w[len(w) // 2] if w else None
 
+STANDARD_ZEICHEN = 2000  # typische Länge eines eingefügten Rezepts, solange keine Messungen mit Länge vorliegen
+
+def _gerade(punkte):
+    """Theil-Sen-Gerade ms = basis + pro_zeichen * zeichen: Median der paarweisen Steigungen, robust gegen einzelne Ausreißer (z. B. Kaltstart des Modells).
+    None, wenn zu wenige Punkte oder die Längen kaum streuen."""
+    if len(punkte) < 5: return None
+    zs = [z for z, _ in punkte]
+    if max(zs) < 1.3 * min(zs): return None  # alle Rezepte etwa gleich lang: Steigung nicht bestimmbar
+    st = sorted((m2 - m1) / (z2 - z1) for i, (z1, m1) in enumerate(punkte) for z2, m2 in punkte[i + 1:] if z2 != z1)
+    pro = max(0.0, st[len(st) // 2])
+    basis = max(0.0, sorted(m - pro * z for z, m in punkte)[len(punkte) // 2])
+    return basis, pro
+
+def _ext_gerade(punkte, ms_typisch):
+    """Extraktionsdauer abhängig von der Textlänge. Ohne genug Messungen: halb feste Dauer, halb proportional zur Länge (um den typischen Wert herum)."""
+    g = _gerade(punkte)
+    if g: return g
+    ref = _median([z for z, _ in punkte]) or STANDARD_ZEICHEN
+    return ms_typisch / 2, ms_typisch / 2 / ref
+
 def schaetzung(modell=""):
-    """Typische Dauer je Schritt (Median der letzten 30 Messungen) für die Restzeit auf der Hauptseite; ohne Messungen grobe Startwerte."""
+    """Typische Dauer je Schritt (Median der letzten 30 Messungen) für die Restzeit auf der Hauptseite; ohne Messungen grobe Startwerte.
+    Die Extraktion wird zusätzlich nach Textlänge geschätzt: ext_basis + ext_pro_zeichen * Zeichen."""
     try:
         with closing(mdb()) as c:
             ms = lambda sql, *a: [r[0] for r in c.execute(sql + " ORDER BY zeit DESC LIMIT 30", a)]
             ext = ms("SELECT ms FROM ollama WHERE aufgabe='extrahieren' AND fehler='' AND modell=?", modell) or ms("SELECT ms FROM ollama WHERE aufgabe='extrahieren' AND fehler=''")
+            pq = "SELECT zeichen, ms FROM ollama WHERE aufgabe='extrahieren' AND fehler='' AND zeichen>0 AND ms>0"
+            punkte = [tuple(r) for r in c.execute(pq + " AND modell=? ORDER BY zeit DESC LIMIT 30", (modell,))] or \
+                     [tuple(r) for r in c.execute(pq + " ORDER BY zeit DESC LIMIT 30")]
             werte = {"extrahieren": ext, "zutat": ms("SELECT ms FROM zutat WHERE zweck='zutat' AND stufe!='fehler'"),
                      "ersatz": ms("SELECT ms FROM ersatz WHERE grund=''"), "ersatz_suche": ms("SELECT ms FROM zutat WHERE zweck IN ('ersatz','mischung')")}
             zut = [r[0] for r in c.execute("SELECT zutaten FROM rezept WHERE fehler='' ORDER BY start DESC LIMIT 30")]
-    except sqlite3.Error: werte, zut = {}, []
+    except sqlite3.Error: werte, zut, punkte = {}, [], []
     out = {k: _median(werte.get(k, [])) or d for k, d in STANDARD_MS.items()}
     out["messungen"] = {k: len(werte.get(k, [])) for k in STANDARD_MS}
     out["zutaten_schnitt"] = _median(zut) or 10
+    out["ext_basis"], out["ext_pro_zeichen"] = (round(x, 3) for x in _ext_gerade(punkte, out["extrahieren"]))
+    out["messungen"]["zeichen"] = len(punkte)
     return out
 
 

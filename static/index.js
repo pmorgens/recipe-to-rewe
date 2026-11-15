@@ -53,7 +53,7 @@ $('#zt').oninput=$('#zt').onchange=async e=>{const i=+e.target.dataset.i,f=e.tar
 $('#ul').onclick=async()=>{lock(1);msg('Rezeptseite wird geladen …');const r=await api('/api/url',{url:$('#url').value.trim()});lock(0);
  if(r.fehler)return msg(r.fehler,1);$('#txt').value=QU=r.text;msg(r.warnung||'Rezept geladen. Bitte kurz prüfen und „Rezept verarbeiten“ klicken.',!!r.warnung)};
 $('#go').onclick=async()=>{if(!M.markt)return msg('Bitte zuerst einen REWE-Markt wählen.',1);lock(1);msg('Rezept wird extrahiert … (bei lokalen Modellen kann das etwas dauern)');
- erlaubnis();await ladeS();eta(S.extrahieren+(s2()?S.zutaten_schnitt*S.zutat:0),'Rezept wird übersetzt',['extrahieren'].concat(s2()?['zutat']:[]),'Rezept wird extrahiert');
+ erlaubnis();await ladeS();eta(extZeit($('#txt').value.length)+(s2()?S.zutaten_schnitt*S.zutat:0),'Rezept wird übersetzt',['extrahieren'].concat(s2()?['zutat']:[]),'Rezept wird extrahiert');
  const r=await api('/api/extract',{text:$('#txt').value,quelle:QU&&$('#txt').value===QU?'hellofresh':'text'});if(r.fehler){lock(0);eta(null);fertig('Rezept konnte nicht verarbeitet werden',r.fehler,1,'#txt');return msg(r.fehler,1)}
  R=r;RID=0;R0={z:r.zutaten.length,s:r.schritte.length};P=r.zutaten.map(()=>({}));NF=[];
  $('#schr').value=r.schritte.join('\n');$('#prep').hidden=false;$('#res').hidden=true;draw();let w=[...r.warnungen];eta(s2()?R.zutaten.length*S.zutat:null,0,0,`Produktsuche 0 von ${R.zutaten.length}`);
@@ -116,8 +116,10 @@ async function saveRez(b){const h=$('#res .rez').cloneNode(true);h.querySelector
  msg(neu?`Rezept als Nr. ${r.id} in der Rezeptdatenbank gespeichert.`:`Gespeicherte Fassung Nr. ${r.id} aktualisiert.`);
  $('#msg').insertAdjacentHTML('beforeend',` <a href="/rezepte#${r.id}" target="_blank" rel="noopener">Ansehen</a>`)}
 // Restzeit: typische Dauer je Schritt aus metadaten.db (/api/schaetzung), nach jedem fertigen Schritt neu berechnet.
-let S={extrahieren:60000,zutat:8000,ersatz:30000,ersatz_suche:4000,zutaten_schnitt:10,messungen:{}},ETA={};
+let S={extrahieren:60000,zutat:8000,ersatz:30000,ersatz_suche:4000,zutaten_schnitt:10,ext_basis:30000,ext_pro_zeichen:15,messungen:{}},ETA={};
 async function ladeS(){try{const r=await api('/api/schaetzung');if(r&&!r.fehler)S=r}catch(e){}}
+// Extraktion: längerer Rezepttext → längere Schätzung (Gerade aus früheren Läufen: feste Dauer + Dauer je Zeichen).
+const extZeit=n=>S.ext_pro_zeichen!=null?S.ext_basis+S.ext_pro_zeichen*n:S.extrahieren;
 const proErsatz=()=>S.ersatz+(s2()?S.ersatz_suche:0);
 const dauer=ms=>{const s=Math.max(1,Math.round(ms/1000));return s<60?`${s} s`:`${Math.floor(s/60)} min ${String(s%60).padStart(2,'0')} s`};
 function eta(rest,was,arten,schritt){if(rest==null){clearInterval(ETA.t);ETA={};$('#eta').hidden=true;return}

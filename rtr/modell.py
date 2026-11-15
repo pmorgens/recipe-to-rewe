@@ -68,6 +68,6 @@ def llm(system, user, schema, aufgabe=""):
     ms = lambda: int((time.time() - t0) * 1000)
     try: r = _llm(system, user, schema, i, info)
     except Err as e:
-        end(i, "error", str(e)); metadaten.ollama(m, aufgabe, ms(), info["werte"], info["versuche"], info["json"], str(e)[:200]); raise
+        end(i, "error", str(e)); metadaten.ollama(m, aufgabe, ms(), info["werte"], info["versuche"], info["json"], str(e)[:200], len(user)); raise
     end(i, "ok", f"{user[:60].replace(chr(10), ' ')} – fertig, {len(json.dumps(r, ensure_ascii=False))} Zeichen")
-    metadaten.ollama(m, aufgabe, ms(), info["werte"], info["versuche"], info["json"]); return r
+    metadaten.ollama(m, aufgabe, ms(), info["werte"], info["versuche"], info["json"], zeichen=len(user)); return r
