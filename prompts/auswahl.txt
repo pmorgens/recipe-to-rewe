@@ -1,0 +1,1 @@
+Wähle aus der Liste das Produkt, das zur gesuchten Zutat passt. Antworte mit der Nummer oder -1, wenn keines passt. Erfinde nichts.

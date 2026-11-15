@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Datenbank – Recipe-to-REWE</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%B3%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/datenbank.css"></head><body>
+<h1>Produktdatenbank</h1>
+<p class="mu" id="info">Lädt …</p>
+<p class="mu"><a href="/">Zurück zum Programm</a> · <a href="/status">Prozessanzeige</a></p>
+<div class="tabs" role="tablist"><button role="tab" id="t-p" aria-selected="true">Produkte</button><button role="tab" id="t-s" aria-selected="false">Suchbegriffe</button><button role="tab" id="t-d" aria-selected="false">Standardzutaten</button><button role="tab" id="t-w" aria-selected="false">Wortdatenbank</button></div>
+<section id="p"><div class="bar"><input id="q" size="44" placeholder="Filtern nach Name, Marke, Kategorie oder Suchbegriff"><a class="btn" href="/api/db/export.csv" download>Alles als CSV herunterladen</a><small id="pn"></small></div>
+ <table><thead><tr><th></th><th>Produkt</th><th>Marke · Packung</th><th>Kategorien</th><th>Gefunden über Suchbegriffe</th><th>Zuletzt gesehen</th></tr></thead><tbody id="pb"></tbody></table>
+ <p><button id="more" hidden>Weitere 100 laden</button></p></section>
+<section id="s" hidden><p class="mu" id="sn"></p><table><thead><tr><th>Suchbegriff</th><th>Zuletzt gesucht</th><th>Gespeicherte Treffer</th><th>Gültig bis</th><th></th></tr></thead><tbody id="sb"></tbody></table></section>
+<section id="d" hidden><p class="mu">Diese Zutaten werden nie gesucht und kosten nichts.</p><table><thead><tr><th></th><th>Name</th><th>Erkannte Schreibweisen</th></tr></thead><tbody id="db"></tbody></table></section>
+<section id="w" hidden><p class="mu" id="wn"></p>
+ <h3>Zutat → gewähltes Produkt</h3><table><thead><tr><th></th><th>Zutat</th><th>Produkt</th><th>Herkunft</th><th></th></tr></thead><tbody id="wz"></tbody></table>
+ <h3>Ähnliche Schreibweisen</h3><table><thead><tr><th>Schreibweise</th><th>gilt als</th><th>Herkunft</th><th></th></tr></thead><tbody id="ws"></tbody></table>
+ <h3>Alternative Suchbegriffe</h3><table><thead><tr><th>Zutat</th><th>führte zum Treffer mit</th><th>Anzahl</th></tr></thead><tbody id="wb"></tbody></table></section>
+<script src="/static/datenbank.js"></script>
+<script src="/static/live.js"></script></body></html>

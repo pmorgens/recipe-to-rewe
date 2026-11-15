@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recipe-to-REWE</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%B3%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/index.css"></head><body>
+<h1 class="noprint">Recipe-to-REWE</h1>
+<p class="noprint" style="margin-top:-.4rem"><a href="/status" target="_blank" rel="noopener">Prozessanzeige öffnen</a> – zeigt live jeden Schritt und wo es hakt. · <a href="/datenbank" target="_blank" rel="noopener">Datenbank ansehen</a></p>
+<fieldset class="noprint"><legend>Einstellungen</legend>
+ <label>Modell <select id="modell"></select></label>
+ <label><input type="checkbox" id="s2"> Produkte im REWE-Online-Sortiment suchen (Stufe 2)</label>
+ <small id="cr" style="color:var(--mu)"></small>
+</fieldset>
+<fieldset class="noprint"><legend>REWE-Markt</legend>
+ <div id="mk-cur"></div>
+ <div id="mk-find"><input id="plz" size="30" placeholder="Postleitzahl oder Ort, z. B. Gummersbach"> <button id="mk-go">Märkte suchen</button></div>
+ <input id="mk-man" size="44" placeholder="Marktname und Straße (Freitext)" hidden>
+ <div id="mk-list" style="width:100%"></div>
+</fieldset>
+<p id="msg" class="noprint" role="status"></p>
+<section class="noprint"><h2>1. Rezept laden</h2>
+ <p><input id="url" type="url" size="52" placeholder="HelloFresh-Rezept-URL (optional)"> <button id="ul">Von URL laden</button></p>
+ <textarea id="txt" rows="10" placeholder="Oder Zutaten und Zubereitung hier einfügen (50 bis 8.000 Zeichen)"></textarea>
+ <p><button id="go">Rezept verarbeiten</button></p></section>
+<section id="prep" class="noprint" hidden><h2>2. Prüfen und markieren</h2>
+ <p class="lb">Zutaten ohne passendes Produkt werden automatisch zum Ersatz vorgeschlagen (Gewürzmischungen mit einer Mischung aus Einzelgewürzen). Du kannst das hier ändern.</p>
+ <div id="zt"></div>
+ <h3>Zubereitung (ein Schritt pro Zeile)</h3><textarea id="schr" rows="8"></textarea>
+ <p><button id="mk">Rezept erstellen</button></p></section>
+<section id="res" hidden></section>
+<script src="/static/index.js"></script>
+<script src="/static/live.js"></script></body></html>

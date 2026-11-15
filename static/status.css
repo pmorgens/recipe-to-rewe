@@ -1,0 +1,17 @@
+:root{--bg:#fbfaf6;--fg:#222;--mu:#6b6b63;--ln:#dcd9cc;--ok:#2f5d3a;--er:#b3261e;--wa:#a35b00;--ru:#1a5fb4;--ac:#2f5d3a}
+@media(prefers-color-scheme:dark){:root{--bg:#161814;--fg:#ececE4;--mu:#a3a398;--ln:#34362e;--ok:#8fc39b;--er:#f2766d;--wa:#e0a458;--ru:#7fb0f0;--ac:#8fc39b}}
+body{font:15px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--fg);max-width:1080px;margin:0 auto;padding:1rem 1rem 4rem}
+h1,h2{font-family:Georgia,serif}h1{font-size:1.7rem;margin:.4rem 0}h2{font-size:1.15rem;margin:1.6rem 0 .5rem}
+button{font:inherit;color:inherit;background:transparent;border:1px solid var(--ln);border-radius:4px;padding:.35rem .8rem;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--wa);outline-offset:1px}button:disabled{opacity:.5;cursor:wait}
+ul{list-style:none;padding:0;margin:0}li.chk{display:flex;gap:.6rem;padding:.4rem 0;border-bottom:1px solid var(--ln)}
+.dot{flex:none;width:1.3em;text-align:center;font-weight:700}.ok{color:var(--ok)}.error{color:var(--er)}.warn{color:var(--wa)}.run{color:var(--ru)}
+small,.mu{color:var(--mu)}table{width:100%;border-collapse:collapse}td{padding:.4rem;border-bottom:1px solid var(--ln);vertical-align:top}
+td.t,td.ms,td.cr{white-space:nowrap;color:var(--mu)}td.cr{text-align:right}tr.error td.d{color:var(--er)}.d{font-size:.88rem;color:var(--mu);overflow-wrap:anywhere}.d.api{font-family:ui-monospace,Consolas,monospace;font-size:.82rem}
+.k{display:inline-block;font-size:.72rem;font-weight:600;border:1px solid currentColor;border-radius:999px;padding:0 .5rem;white-space:nowrap}
+.k-api{color:var(--ru)}.k-db{color:var(--ok)}.k-model{color:var(--wa)}.k-programm,.k-fetch{color:var(--mu)}
+.spin{display:inline-block;animation:r 1s linear infinite}@keyframes r{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+code{background:color-mix(in srgb,var(--fg) 10%,transparent);padding:0 .25rem;border-radius:3px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.8rem}.card{border:1px solid var(--ln);border-radius:6px;padding:.7rem .9rem}
+.card h3{margin:0 0 .3rem;font-size:1rem;font-family:Georgia,serif}.big{font-size:1.6rem;font-weight:700}.card ul li{padding:.1rem 0;overflow-wrap:anywhere}
+.fazit{border-left:4px solid var(--ac);padding:.4rem .9rem;margin:.8rem 0;background:color-mix(in srgb,var(--ac) 8%,transparent)}

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prozess – Recipe-to-REWE</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%B3%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/status.css"></head><body>
+<h1>Prozessanzeige</h1><p class="mu">Zeigt live, was das Programm tut und was bei API.SH abgefragt wird. <a href="/">Zurück zum Programm</a> · <a href="/datenbank">Gesamte Datenbank ansehen</a></p>
+<h2>Prüfliste</h2><ul id="chk"></ul>
+<p><button id="tm">Ollama testen</button> <button id="ta">API.SH testen (1 Credit)</button> <button id="cp">Protokoll und Zusammenfassung kopieren</button> <span id="tr" role="status"></span></p>
+<h2>Ablauf <small id="n"></small></h2>
+<p class="mu">Jede Zeile mit <span class="k k-api">API.SH</span> zeigt die genaue Anfrage (Adresse ohne Schlüssel), das Ergebnis und die Credits. <span class="k k-db">Datenbank</span> und <span class="k k-programm">Programm</span> kosten nie Credits.
+ <label><input type="checkbox" id="onlyapi"> nur API.SH-Aufrufe zeigen</label></p>
+<table><tbody id="log"></tbody></table>
+<h2>Zusammenfassung <small id="sn"></small></h2>
+<p><button id="reset">Zähler zurücksetzen (neuer Durchlauf)</button></p>
+<div id="sum"></div>
+<script src="/static/status.js"></script>
+<script src="/static/live.js"></script></body></html>

@@ -1,0 +1,14 @@
+# Geheimnisse: API-Schlüssel nie einchecken
+.env
+.env.*
+!.env.example
+
+# Lokale Daten (bauen sich selbst neu auf)
+*.db
+cache.json
+credits.json
+settings.json
+
+# Python
+__pycache__/
+*.pyc

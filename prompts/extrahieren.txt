@@ -1,0 +1,1 @@
+Zerlege das Kochrezept in JSON. Übernimm Zutatenzeilen ('text') und Schritte wörtlich. Nichts erfinden, nichts weglassen, keine Mengen umrechnen. 'name' ist nur der Zutatenname ohne Menge und Zusatz. Fehlende Angaben: leerer String.
