@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nutzung – Recipe-to-REWE</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%B3%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/metadaten.css"></head><body>
+<h1>Nutzung und Dauer</h1>
+<p class="mu"><a href="/">Zurück zum Programm</a> · <a href="/rezepte">Gespeicherte Rezepte</a> · <a href="/datenbank">Datenbank</a> · <a href="/status">Prozessanzeige</a></p>
+<div class="bar" role="group" aria-label="Zeitraum">
+ <span class="mu">Zeitraum</span>
+ <button data-t="7">7 Tage</button><button data-t="30" aria-pressed="true">30 Tage</button><button data-t="90">90 Tage</button><button data-t="0">Alles</button>
+ <button id="neu" class="leise">Aktualisieren</button><small id="stand" class="mu"></small>
+</div>
+<p id="msg" role="status"></p>
+<div id="inhalt">
+ <section class="kacheln" id="k"></section>
+ <section id="hinweise"></section>
+ <div class="zwei">
+  <section class="karte"><h2>Typische Dauer je Schritt</h2><p class="mu klein">Median im Zeitraum. Ollama je Aufgabe und Modell, API.SH je Endpunkt (nur neue Anfragen).</p><div id="c-dauer"></div></section>
+  <section class="karte"><h2>Wie Zutaten gefunden werden</h2><p class="mu klein">Erste Stufe, die getroffen hat. Alles außer „API.SH“ und „keine“ kostet keine Credits.</p><div id="c-stufen"></div></section>
+ </div>
+ <section class="karte"><h2>Zutaten ohne API-Kosten im Verlauf</h2><p class="mu klein" id="v-text">Anteil je Rezeptlauf; die Linie glättet über die letzten 5 Läufe.</p>
+   <div id="c-verlauf"></div></section>
+ <section class="karte"><h2>Credits pro Tag</h2><p class="mu klein">Verbrauchte API.SH-Credits je Tag; Rezeptläufe stehen im Tooltip.</p><div id="c-tage"></div></section>
+ <section class="karte"><h2>Ollama im Detail</h2><div class="scroll"><table id="t-ollama"></table></div></section>
+ <section class="karte"><h2>API.SH im Detail</h2><div class="scroll"><table id="t-api"></table></div></section>
+ <div class="zwei">
+  <section class="karte"><h2>Zutaten ohne Treffer</h2><p class="mu klein">Kandidaten für eine Übersetzung in der Wortdatenbank.</p><ol id="l-ohne" class="liste"></ol></section>
+  <section class="karte"><h2>Langsamste Produktsuchen</h2><ol id="l-langsam" class="liste"></ol></section>
+ </div>
+ <section class="karte"><h2>Ersatzvorschläge</h2><div id="ersatz"></div></section>
+ <section class="karte"><h2>Letzte Abfragen</h2>
+  <div class="bar" role="group" aria-label="Art filtern"><button data-a="" aria-pressed="true">Alle</button><button data-a="Ollama">Ollama</button><button data-a="API.SH">API.SH</button><button data-a="Zutat">Zutaten</button></div>
+  <div class="scroll"><table id="t-letzte"></table></div></section>
+</div>
+<div id="tip" role="tooltip" hidden></div>
+<script src="/static/metadaten.js"></script>
+<script src="/static/live.js"></script></body></html>

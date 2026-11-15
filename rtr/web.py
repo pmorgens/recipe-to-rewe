@@ -2,7 +2,7 @@
 import json, os, re, sys, time, urllib.parse, urllib.request
 from datetime import date
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from . import apish, hellofresh, modell, woerter
+from . import apish, hellofresh, metadaten, modell, rezepte, woerter
 from .config import B, Err, get_key, jload, jsave, settings
 from .datenbank import dbpage, dbstats, dbsuchen, dbview, export_csv
 from .protokoll import LOG, _V, _lock, end, ev
@@ -28,7 +28,7 @@ def test(was):
     if was == "api":
         d, _ = apish.api("/markets", {"q": "Gummersbach", "limit": 1}, 0)  # ttl 0: immer echter Aufruf, 1 Credit
         return {"ok": True, "detail": f"{len(d.get('markets', []))} Markt gefunden"}
-    modell.llm("Antworte mit JSON.", "Sag ok.", {"type": "object", "required": ["antwort"], "properties": {"antwort": {"type": "string"}}})
+    modell.llm("Antworte mit JSON.", "Sag ok.", {"type": "object", "required": ["antwort"], "properties": {"antwort": {"type": "string"}}}, "test")
     return {"ok": True, "detail": "Modell hat geantwortet"}
 
 # ---------- HTTP ----------
@@ -56,6 +56,8 @@ class H(BaseHTTPRequestHandler):
         if u.path == "/api/version": return self.out({"v": version()})
         if u.path == "/": return self.out((B / "static" / "index.html").read_bytes(), ctype="text/html", headers={"Cache-Control": "no-store"})
         if u.path == "/datenbank": return self.out((B / "static" / "datenbank.html").read_bytes(), ctype="text/html", headers={"Cache-Control": "no-store"})
+        if u.path == "/metadaten": return self.out((B / "static" / "metadaten.html").read_bytes(), ctype="text/html", headers={"Cache-Control": "no-store"})
+        if u.path == "/rezepte": return self.out((B / "static" / "rezepte.html").read_bytes(), ctype="text/html", headers={"Cache-Control": "no-store"})
         if u.path == "/status": return self.out((B / "static" / "status.html").read_bytes(), ctype="text/html", headers={"Cache-Control": "no-store"})
         if u.path == "/api/log":
             since = int((urllib.parse.parse_qs(u.query).get("since") or ["0"])[0])
@@ -65,6 +67,16 @@ class H(BaseHTTPRequestHandler):
             g = lambda k, d="": (urllib.parse.parse_qs(u.query).get(k) or [d])[0]
             return self.out(dbpage(g("q"), g("offset", "0"), g("limit", "100")))
         if u.path == "/api/woerter": return self.out(woerter.woerteransicht())
+        if u.path == "/api/metadaten/seite":
+            try: tage = max(0, int((urllib.parse.parse_qs(u.query).get("tage") or ["30"])[0]))
+            except ValueError: tage = 30
+            return self.out(metadaten.seite(tage, settings()["limit"]))
+        if u.path == "/api/schaetzung": return self.out(metadaten.schaetzung(settings()["modell"]))
+        if u.path == "/api/rezepte": return self.out(rezepte.liste())
+        if u.path == "/api/rezept":
+            try: return self.out(rezepte.holen((urllib.parse.parse_qs(u.query).get("id") or ["0"])[0]))
+            except (Err, ValueError) as e: return self.out({"fehler": str(e) if isinstance(e, Err) else "Ungültige Rezeptnummer."}, 404)
+        if u.path == "/api/metadaten": return self.out(metadaten.uebersicht(int((urllib.parse.parse_qs(u.query).get("tage") or ["30"])[0])))
         if u.path == "/api/dbsuchen": return self.out(dbsuchen())
         if u.path == "/api/db/export.csv": return self.out(export_csv(), ctype="text/csv", headers={"Content-Disposition": 'attachment; filename="produkte.csv"'})
         if u.path == "/api/db": return self.out(dbview((urllib.parse.parse_qs(u.query).get("q") or [""])[0]))
@@ -81,17 +93,20 @@ class H(BaseHTTPRequestHandler):
         if o and not re.match(r"http://(127\.0\.0\.1|localhost)(:\d+)?$", o): return self.out({"fehler": "verboten"}, 403)
         b = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
         LBL = {"/api/extract": "Programm: Rezept auslesen", "/api/products": "Programm: Produkte zu einer Zutat suchen", "/api/substitute": "Programm: Ersatz vorschlagen",
-               "/api/markets": "Programm: Märkte suchen", "/api/url": "Programm: HelloFresh-Seite laden", "/api/details": "Programm: Produktdetails holen", "/api/test": "Programm: Verbindungstest", "/api/merken": "Programm: Auswahl in der Wortdatenbank merken", "/api/vergessen": "Programm: Eintrag der Wortdatenbank löschen"}
+               "/api/markets": "Programm: Märkte suchen", "/api/url": "Programm: HelloFresh-Seite laden", "/api/details": "Programm: Produktdetails holen", "/api/test": "Programm: Verbindungstest", "/api/merken": "Programm: Auswahl in der Wortdatenbank merken", "/api/vergessen": "Programm: Eintrag der Wortdatenbank löschen",
+               "/api/rezept_speichern": "Programm: Rezept in der Rezeptdatenbank speichern", "/api/rezept_loeschen": "Programm: Rezept aus der Rezeptdatenbank löschen"}
         p = self.path; i = None if p == "/api/settings" else ev(LBL.get(p, "Programm: " + p), "run", "interner Schritt, verbraucht selbst keine Credits", kind="programm")
         try:
             if p == "/api/settings": jsave("settings.json", {**settings(), **b}); r = {"ok": True}
             elif p == "/api/url": t, w = hellofresh.recipe_from_url(b["url"]); r = {"text": t, "warnung": w}
-            elif p == "/api/extract": r = extract(b["text"])
-            elif p == "/api/substitute": r = anreichern(substitute(b["rezept"], b["index"], b.get("bisher", [])), b["rezept"]["zutaten"][b["index"]]["name"])
+            elif p == "/api/extract": r = extract(b["text"], b.get("quelle", "text"))
+            elif p == "/api/substitute": r = anreichern(substitute(b["rezept"], b["index"], b.get("bisher", []), b.get("lauf")), b["rezept"]["zutaten"][b["index"]]["name"], b.get("lauf"))
             elif p == "/api/merken": r = {"ok": woerter.merken(b["zutat"], b["produkt"], "nutzer")}
             elif p == "/api/vergessen": woerter.vergessen(b["art"], b["schluessel"]); r = {"ok": True}
+            elif p == "/api/rezept_speichern": r = {"id": rezepte.speichern(b.get("daten"), b.get("html", ""), b.get("id"), b.get("lauf"))}
+            elif p == "/api/rezept_loeschen": rezepte.loeschen(b["id"]); r = {"ok": True}
             elif p == "/api/markets": r = apish.markets(b["q"])
-            elif p == "/api/products": r = apish.products(b["name"])
+            elif p == "/api/products": r = apish.products(b["name"], lauf=b.get("lauf"))
             elif p == "/api/details": r = apish.details(b["id"])
             elif p == "/api/test": r = test(b["was"])
             else: r = {"fehler": "nicht gefunden"}

@@ -4,7 +4,7 @@ from pathlib import Path
 
 B = Path(__file__).resolve().parent.parent  # Programmordner: hier liegen settings.json, produkte.db, .env ...
 UA = "Recipe-to-REWE/1.0 (privater Gebrauch, lokal)"
-DEF = {"modell": "", "markt": "", "ort": "", "markt_id": "", "markt_url": "", "stufe2": True, "limit": 800, "timeout_s": 300, "max_s": 1800, "gueltig_tage": 90, "details_auto": True,
+DEF = {"modell": "", "markt": "", "ort": "", "markt_id": "", "markt_url": "", "stufe2": True, "limit": 800, "timeout_s": 300, "max_s": 1800, "gueltig_tage": 90, "details_auto": True, "ton": True,
        "grund": ["salz", "pfeffer", "wasser", "öl", "zucker"]}
 norm = lambda t: re.sub(r"\s+", " ", t).strip().lower()
 

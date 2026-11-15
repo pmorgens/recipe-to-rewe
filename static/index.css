@@ -31,3 +31,13 @@ table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid var(--ln
 @media print{.rez{border:0;padding:0}.rg{grid-template-columns:minmax(0,1fr)}.tag{border-color:#000;color:#000!important}.open{border-color:#000}.noprint{display:none!important}body{background:#fff;color:#000;font-size:11pt}.s-ok,.s-wa{color:#000}}
 
 .badge.mem{background:#e8f1e6;color:#2d5a27;border-radius:4px;padding:1px 6px;font-size:.8rem}
+#eta,#toast{position:fixed;right:1rem;bottom:1rem;z-index:10;width:min(21rem,calc(100vw - 2rem));box-sizing:border-box;background:var(--bg);color:var(--fg);
+ border:1px solid var(--ln);border-radius:10px;padding:.8rem 1rem;box-shadow:0 6px 24px rgba(0,0,0,.18)}
+#eta .et-k{display:flex;justify-content:space-between;gap:.6rem;font-size:.9rem}#eta .et-s{color:var(--mu);font-size:.82rem;text-align:right}
+#eta .et-z{font-size:1.6rem;font-weight:650;font-variant-numeric:tabular-nums;margin:.15rem 0 .4rem}#eta .et-z.lang{font-size:1rem;font-weight:600;color:var(--wa)}
+#eta .et-bar{height:6px;border-radius:3px;background:var(--ln);overflow:hidden}#eta .et-bar i{display:block;height:100%;width:0;background:var(--ac);border-radius:3px;transition:width .9s linear}
+#eta .et-b{display:block;color:var(--mu);margin-top:.4rem;font-size:.78rem}
+#toast{display:flex;gap:.7rem;align-items:flex-start;border-left:4px solid var(--ok);cursor:pointer}#toast.warn{border-left-color:var(--wa)}
+#toast .tt{flex:1}#toast b{display:block}#toast small{color:var(--mu)}#toast button{background:transparent;color:var(--mu);border:0;padding:0 .2rem;font-size:1.2rem;line-height:1;cursor:pointer}
+@media(prefers-reduced-motion:reduce){#eta .et-bar i{transition:none}}
+input,select{max-width:100%;box-sizing:border-box}

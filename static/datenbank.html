@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="/static/datenbank.css"></head><body>
 <h1>Produktdatenbank</h1>
 <p class="mu" id="info">Lädt …</p>
-<p class="mu"><a href="/">Zurück zum Programm</a> · <a href="/status">Prozessanzeige</a></p>
+<p class="mu"><a href="/">Zurück zum Programm</a> · <a href="/status">Prozessanzeige</a> · <a href="/rezepte">Gespeicherte Rezepte</a> · <a href="/metadaten">Nutzung und Dauer</a></p>
 <div class="tabs" role="tablist"><button role="tab" id="t-p" aria-selected="true">Produkte</button><button role="tab" id="t-s" aria-selected="false">Suchbegriffe</button><button role="tab" id="t-d" aria-selected="false">Standardzutaten</button><button role="tab" id="t-w" aria-selected="false">Wortdatenbank</button></div>
 <section id="p"><div class="bar"><input id="q" size="44" placeholder="Filtern nach Name, Marke, Kategorie oder Suchbegriff"><a class="btn" href="/api/db/export.csv" download>Alles als CSV herunterladen</a><small id="pn"></small></div>
  <table><thead><tr><th></th><th>Produkt</th><th>Marke · Packung</th><th>Kategorien</th><th>Gefunden über Suchbegriffe</th><th>Zuletzt gesehen</th></tr></thead><tbody id="pb"></tbody></table>

@@ -4,10 +4,11 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8D%B3%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="/static/index.css"></head><body>
 <h1 class="noprint">Recipe-to-REWE</h1>
-<p class="noprint" style="margin-top:-.4rem"><a href="/status" target="_blank" rel="noopener">Prozessanzeige öffnen</a> – zeigt live jeden Schritt und wo es hakt. · <a href="/datenbank" target="_blank" rel="noopener">Datenbank ansehen</a></p>
+<p class="noprint" style="margin-top:-.4rem"><a href="/status" target="_blank" rel="noopener">Prozessanzeige öffnen</a> – zeigt live jeden Schritt und wo es hakt. · <a href="/datenbank" target="_blank" rel="noopener">Datenbank ansehen</a> · <a href="/rezepte" target="_blank" rel="noopener">Gespeicherte Rezepte</a> · <a href="/metadaten" target="_blank" rel="noopener">Nutzung und Dauer</a></p>
 <fieldset class="noprint"><legend>Einstellungen</legend>
  <label>Modell <select id="modell"></select></label>
  <label><input type="checkbox" id="s2"> Produkte im REWE-Online-Sortiment suchen (Stufe 2)</label>
+ <label><input type="checkbox" id="ton"> Ton, wenn etwas fertig ist</label>
  <small id="cr" style="color:var(--mu)"></small>
 </fieldset>
 <fieldset class="noprint"><legend>REWE-Markt</legend>
@@ -17,6 +18,9 @@
  <div id="mk-list" style="width:100%"></div>
 </fieldset>
 <p id="msg" class="noprint" role="status"></p>
+<div id="eta" class="noprint" role="timer" aria-live="off" hidden><div class="et-k"><b class="et-was"></b><span class="et-s"></span></div>
+ <div class="et-z"></div><div class="et-bar" aria-hidden="true"><i></i></div><small class="et-b"></small></div>
+<div id="toast" class="noprint" role="status" aria-live="polite" hidden></div>
 <section class="noprint"><h2>1. Rezept laden</h2>
  <p><input id="url" type="url" size="52" placeholder="HelloFresh-Rezept-URL (optional)"> <button id="ul">Von URL laden</button></p>
  <textarea id="txt" rows="10" placeholder="Oder Zutaten und Zubereitung hier einfügen (50 bis 8.000 Zeichen)"></textarea>

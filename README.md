@@ -19,18 +19,20 @@ rtr/            Programmlogik in kleinen Modulen
   apish.py        API.SH: Marktsuche, Produktsuche, Produktdetails
   standard.py     Standardzutaten (standard.db)
   woerter.py      Wortdatenbank (woerter.db): Schreibweisen, Suchbegriffe, Zutat → Produkt
+  rezepte.py      Rezeptdatenbank (rezepte.db): fertige Rezepte speichern, auflisten, löschen
+  metadaten.py    Metadaten (metadaten.db): Credits, Ollama-Anfragen, Rezeptläufe, Weg je Zutat, Ersatz
   datenbank.py    SQLite-Datenbank, Standardzutaten, Datenbankseite, CSV
   hellofresh.py   HelloFresh-Seite laden
   web.py          Webserver mit allen Routen
 prompts/        Anweisungen an das Modell als Textdateien (extrahieren, ersatz, auswahl)
-static/         Seiten: je Seite .html, .css und .js (index = Hauptseite, status, datenbank)
+static/         Seiten: je Seite .html, .css und .js (index = Hauptseite, status, datenbank, rezepte, metadaten)
 ```
 Was wann gilt, ohne alles neu zu laden:
 - **Seiten** (`static/`) und **Prompts** (`prompts/`) werden bei jedem Aufruf neu gelesen: Datei tauschen, Browser-Seite neu laden. Kein Neustart.
 - **Python-Dateien** (`rtr/*.py`): mit `python start.py` erkennt das Programm die Änderung und startet den Server selbst neu. Ist eine Datei kaputt, wartet es,
   bis sie repariert ist. Die Seiten zeigen dann unten einen Hinweis „Neue Programmversion verfügbar“ mit Button zum Neuladen (die Seite lädt nicht von selbst neu, damit nichts verloren geht).
 - **Einstellungen** (`settings.json`) und der **API-Schlüssel** (`.env`) gelten sofort.
-- **Daten** (`produkte.db`, `settings.json`, `.env`, `credits.json`, `cache.json`) liegen im Programmordner und werden von Updates nie überschrieben.
+- **Daten** (`produkte.db`, `woerter.db`, `metadaten.db`, `rezepte.db`, `settings.json`, `.env`, `credits.json`, `cache.json`) liegen im Programmordner und werden von Updates nie überschrieben.
 
 ### Updates einspielen
 Künftig genügt es, nur die genannten Dateien in den Ordner zu kopieren (gleicher Pfad, z. B. `static/index.js` oder `rtr/rezept.py`), alles andere bleibt.
@@ -38,7 +40,9 @@ Künftig genügt es, nur die genannten Dateien in den Ordner zu kopieren (gleich
 `credits.json` und `cache.json` mitnehmen. Die alten `index.html`, `status.html` und `datenbank.html` im Hauptordner werden nicht mehr gebraucht.
 
 ## Seiten
-- `/` Hauptseite: Markt wählen, Rezept laden, prüfen, Ersatz, fertiges Rezept.
+- `/` Hauptseite: Markt wählen, Rezept laden, prüfen, Ersatz, fertiges Rezept, in der Rezeptdatenbank speichern.
+- `/rezepte` Gespeicherte Rezepte: ansehen, drucken, löschen.
+- `/metadaten` Nutzung und Dauer: Auswertung der Metadaten (siehe unten).
 - `/status` Prozessanzeige: Prüfliste, jeder Schritt live (bei API.SH die genaue Abfrage, Ergebnis und Credits), Zusammenfassung am Ende, Tests für Ollama und API.SH.
   „API.SH …“ = echter Aufruf (kann Credits kosten), „Programm: …“ = interner Schritt (nie Credits), „Datenbank“ = lokal und kostenlos.
 - `/datenbank` Gesamte Datenbank: Produkte (Bild, Marke, Packung, Kategorien, Suchbegriffe), Suchbegriffe mit Gültigkeit, Standardzutaten; CSV-Export.
@@ -99,6 +103,62 @@ Gelernt wird an drei Stellen: Ein API-Treffer über einen übersetzten Begriff u
 Bekannte Zutaten werden in Schritt 2 sofort übernommen und mit „aus Erinnerung“ gekennzeichnet (änderbar), ohne Modell und ohne API-Anfrage. Ansehen und Einträge vergessen: `/datenbank`, Reiter „Wortdatenbank“.
 Löschst du `woerter.db`, ist alles Gelernte weg; sie baut sich neu auf.
 
+## Rezeptdatenbank
+Unter dem fertigen Rezept speichert **„In Rezeptdatenbank speichern“** das Rezept in `rezepte.db` (eigene SQLite-Datei). Danach heißt der Button
+„Gespeicherte Fassung aktualisieren“: Änderst du noch etwas (z. B. „Erneut versuchen“ beim Ersatz), wird derselbe Eintrag überschrieben statt ein zweiter angelegt.
+Ein neu verarbeitetes Rezept bekommt beim Speichern einen neuen Eintrag.
+
+Gespeichert werden je Rezept:
+- **Daten (JSON):** Name, Portionen, Markt, Stand der Produktzuordnung, offene Punkte, je Zutat Menge, Name, Originalzeile, Status (Produkt zugeordnet, Ersatz,
+  Standardzutat, Im Markt prüfen, Übernommen), Produkt (Name, Link, Bild, Marke, Packung), Mischung und Begründung beim Ersatz, je Schritt Text und Ersatz-Hinweise.
+- **Ansicht (HTML):** das fertige Rezept, wie es auf der Seite steht (ohne Buttons), damit es später genauso gezeigt werden kann.
+- **Kennzahlen:** Anzahl Zutaten, Ersatz und offene Punkte, Rezeptlauf (Verbindung zu `metadaten.db`), erstellt und geändert.
+
+**Seite `/rezepte`:** Liste aller gespeicherten Rezepte (filterbar nach Name oder Markt, mit Anzahl Zutaten, Ersatz und offenen Punkten), Ansicht wie beim Erstellen,
+Drucken / als PDF speichern und Löschen (mit Rückfrage). `/rezepte#3` öffnet direkt Rezept Nr. 3; nach dem Speichern führt der Link „Ansehen“ dorthin.
+Als JSON: `/api/rezepte` (Liste), `/api/rezept?id=1` (ein Rezept mit Daten und Ansicht).
+
+## Restzeit
+Während „Rezept verarbeiten“, „Rezept erstellen“ und „Erneut versuchen“ zeigt die Hauptseite unten rechts ein schwebendes Fenster, das beim Scrollen
+immer sichtbar bleibt: Restzeit (zählt jede Sekunde herunter), aktueller Schritt (z. B. „Produktsuche 3 von 8“), Fortschrittsbalken, bisherige Dauer.
+Grundlage ist die typische Dauer (Median der letzten 30 Messungen in `metadaten.db`) für Extrahieren (je Modell), Produktsuche je Zutat und Ersatz.
+Restzeit = Extrahieren + Zutaten × Produktsuche bzw. offene Ersatzvorschläge × Ersatz. Nach jedem fertigen Schritt wird neu gerechnet, nach dem Extrahieren
+mit der echten Zutatenzahl. Ohne Messungen gelten grobe Startwerte (60 s Extrahieren, 8 s je Zutat, 30 s je Ersatz); mit jeder Nutzung wird die Schätzung genauer.
+Als JSON: `/api/schaetzung`.
+
+**Benachrichtigung, wenn etwas fertig ist:** Nach „Rezept übersetzt“, „Rezept erstellt“ und einem erneuten Ersatz erscheint unten rechts eine Meldung mit
+Ergebnis (z. B. „7 Zutaten: 5 zugeordnet, 2 für Ersatz markiert“); Klick darauf springt zum Ergebnis, × schließt sie. Ist der Tab im Hintergrund,
+steht zusätzlich ✓ (oder ⚠ bei Problemen) im Tab-Titel und, wenn du es beim ersten Start erlaubt hast, kommt eine Mitteilung des Browsers bzw. von Windows.
+Erlaubnis ändern: im Browser über das Schloss-Symbol links neben der Adresse → Benachrichtigungen.
+Dazu spielt ein kurzer Ton (aufsteigend = fertig, absteigend = bitte prüfen), auch wenn der Tab im Hintergrund ist. Abschalten: Haken „Ton, wenn etwas fertig ist“
+in den Einstellungen der Hauptseite (gespeichert in `settings.json` als `ton`).
+
+## Metadaten
+`metadaten.db` (eigene SQLite-Datei) sammelt Kennzahlen zur Nutzung. Gespeichert werden nur Zahlen, Namen und Fehlermeldungen, keine Prompts, Antworten oder Rezepttexte.
+Ein Fehler beim Schreiben hält das Programm nie an.
+
+**Seite `/metadaten` („Nutzung und Dauer“)**, Zeitraum 7, 30, 90 Tage oder alles, aktualisiert sich alle 30 Sekunden:
+- Kennzahlen: Rezeptläufe, Dauer je Rezept (Median, Ø, längster), Credits im Zeitraum und im Monat, **Prognose bis Monatsende** gegen das Limit,
+  Anteil der Zutaten ohne API-Kosten, Modellanfragen (Median, Tokens/s, Rechenzeit gesamt), Erfolgsquote beim Ersatz.
+- **Hinweise**, die sich aus den Zahlen ergeben: Prognose über dem Limit, Modell wird oft neu geladen (Tipp `OLLAMA_KEEP_ALIVE`), viele Fehler oder zweite Versuche,
+  veraltetes Ollama ohne JSON-Schema, Zutaten ohne Treffer, viele unsichere Ersatzvorschläge.
+- Diagramme: typische Dauer je Schritt (Ollama je Aufgabe und Modell, API.SH je Endpunkt), wie Zutaten gefunden werden (Stufen), **Zutaten ohne API-Kosten im Verlauf**
+  (Anteil je Rezeptlauf, Linie = Durchschnitt der letzten 5 Läufe, Vergleich erste/zweite Hälfte: zeigt, wie die Datenbanken dazulernen), Credits pro Tag. Details im Tooltip.
+- Tabellen: Ollama und API.SH im Detail (Median, 90 % unter, längste, Ladezeit, Tokens, Fehler), Zutaten ohne Treffer, langsamste Produktsuchen,
+  Gründe fehlgeschlagener Ersatzvorschläge, die letzten 40 Abfragen mit Dauer (filterbar nach Ollama, API.SH, Zutaten).
+
+Als JSON: `/api/metadaten/seite?tage=30` (alles für die Seite) und `/api/metadaten?tage=30` (kurze Zusammenfassung).
+
+| Tabelle | Eine Zeile je | Felder |
+|---|---|---|
+| `api` | API.SH-Anfrage | Endpunkt, Suchbegriff bzw. Produkt-ID, Credits, Cache (`neu`, `lokal`, `api`), Dauer in ms, Trefferzahl, Fehler |
+| `ollama` | Modellanfrage | Modell, Aufgabe (`extrahieren`, `ersatz`, `auswahl`, `test`), Dauer, Ladezeit, Tokens ein/aus, Tokens pro Sekunde, Versuche, Ausweichen auf einfaches JSON, Fehler |
+| `rezept` | Rezeptlauf | Start, Ende (Gesamtdauer = Ende − Start), Quelle (`hellofresh` oder `text`), Anzahl Zutaten, Schritte, Warnungen, Dauer des Extrahierens, Fehler, gesuchte Zutaten und davon ohne API-Kosten (Standard, Grundzutat, Erinnerung, Produktdatenbank, Übersetzung) |
+| `zutat` | Produktsuche | Rezeptlauf, Zweck (`zutat`, `ersatz`, `mischung`), Zutat, Stufe (`standard`, `grund`, `erinnerung`, `db`, `uebersetzung`, `api`, `api_uebersetzung`, `keine`, `fehler`), genutzter Begriff, Kandidaten, Produkt gewählt, Dauer |
+| `ersatz` | Ersatzvorschlag | Rezeptlauf, Zutat, gelungen, unsicher, Gewürzmischung, Versuche, Grund bei Fehlschlag, Dauer |
+
+Löschst du `metadaten.db`, beginnt die Sammlung von vorn. Eine ältere `metadaten.db` ohne die Spalten für „ohne API-Kosten“ wird beim nächsten Start ergänzt und aus den gespeicherten Zutaten nachgerechnet.
+
 ## Einstellungen (`settings.json`)
 | Schlüssel | Bedeutung | Standard |
 |---|---|---|
@@ -109,6 +169,7 @@ Löschst du `woerter.db`, ist alles Gelernte weg; sie baut sich neu auf.
 | `details_auto` | Marke/Packung/Kategorien beim Zuordnen laden (1 Credit je Produkt) | an |
 | `timeout_s` | längste Pause ohne neues Zeichen vom Modell | 300 |
 | `max_s` | Höchstdauer einer Modellanfrage | 1800 |
+| `ton` | Ton, wenn ein Schritt fertig ist | an |
 | `grund` | weitere Zutaten, die nie gesucht werden | Salz, Pfeffer, Wasser, Öl, Zucker |
 
 ## Wenn das Modell Fehler meldet
